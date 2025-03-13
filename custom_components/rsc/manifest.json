@@ -1,0 +1,10 @@
+{
+    "domain": "rsc",
+    "name": "Remote Slaves Communication (RSC)",
+    "version": "1.0.0",
+    "codeowners": ["@scarfsail"],
+    "requirements": ["pyserial"],
+    "iot_class":"local_poll",
+    "dependencies": [],
+    "config_flow": true
+  }
