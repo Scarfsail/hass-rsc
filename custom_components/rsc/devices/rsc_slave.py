@@ -45,7 +45,7 @@ class RscSlave:
             f"Initialized slave: {title} (ID: {slave_id}) "
             f"with {len(self.inputs)} inputs and {len(self.outputs)} outputs"
         )
-        self.packet_id = 0  # Add packet_id attribute
+        self.packet_id = 1  # Add packet_id attribute
         self.all_outputs_requested = False  # Add all_outputs_requested attribute
 
     def get_data_for_slave(self) -> bytes:
@@ -174,7 +174,7 @@ class RscSlave:
                 self.packet_id = received_packet_id
                 # Increment packet ID for next request, ensuring it's never 0
                 self.packet_id += 1
-                if self.packet_id == 0:
+                if self.packet_id > 255:
                     self.packet_id = 1
 
                 # Notify all outputs that response was received

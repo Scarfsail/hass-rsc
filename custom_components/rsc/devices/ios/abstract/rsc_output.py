@@ -18,7 +18,7 @@ class RscOutput(RscIo, ABC):
         """Initialize the RSC output."""
         super().__init__(io_index, title, default_value)
         self._changed_value_sent_with_packet_id = 0
-        self._packet_id_lock = threading.Lock()  # Added lock for thread safety
+        self._packet_id_lock = threading.RLock()  # Added lock for thread safety
         self.persist_value_and_last_change = False
 
     @abstractmethod

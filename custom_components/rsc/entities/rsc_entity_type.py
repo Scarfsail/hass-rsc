@@ -6,5 +6,5 @@ class RscEntityType(StrEnum):
     BINARY_SENSOR = "binary_sensor"
     BUTTON = "button"
     SWITCH = "switch"
-    COVER = "cover"
+    GATE = "gate"
     NUMBER = "number"
