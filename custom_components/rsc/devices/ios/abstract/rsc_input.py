@@ -51,9 +51,9 @@ class RscInput(RscIo, ABC):
 
         if input_is_online:
             received_value = self._process_value(data, position)
-            self.value = received_value
             input_is_online = self._is_processed_value_valid(received_value)
             if input_is_online:
+                self.value = received_value
                 self.last_received_valid_data = datetime.datetime.now()
 
         self.is_online = input_is_online

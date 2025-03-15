@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import TypeVar
-from .rsc_io_type import RscIoType
 
-T = TypeVar("T")
+from .rsc_io_type import RscIoType
 
 
 class RscIo(ABC):
@@ -10,11 +8,40 @@ class RscIo(ABC):
         self.io_index = io_index
         self.title = title
 
-        self.value = default_value
-        self.is_online = False
+        self._value = default_value
+        self._is_online = False
 
-    def _on_value_changed(self) -> None:
+    def _on_changed(self) -> None:
         pass
+
+    def _on_is_online_change(self) -> None:
+        """Handle changes to the online status."""
+        pass
+
+    @property
+    def value(self):
+        """Get the current value."""
+        return self._value
+
+    @value.setter
+    def value(self, value) -> None:
+        """Set the value and notify if it has changed."""
+        if self._value != value:
+            self._value = value
+            self._on_changed()
+
+    @property
+    def is_online(self) -> bool:
+        """Check if the IO is online."""
+        return self._is_online
+
+    @is_online.setter
+    def is_online(self, value: bool) -> None:
+        """Set the online status."""
+        if self._is_online != value:
+            self._is_online = value
+            self._on_is_online_change()
+            self._on_changed()
 
     @abstractmethod
     def get_io_data_length(self) -> int:

@@ -106,11 +106,12 @@ class RscOutput(RscIo, ABC):
         self.value = value
         return True
 
-    def _on_value_changed(self) -> None:
+    def _on_changed(self) -> None:
         """Handle value changes."""
         with self._packet_id_lock:  # Use lock when modifying packet ID
             self._changed_value_sent_with_packet_id = self.PACKET_ID_VALUE_CHANGED
-        super()._on_value_changed()
+
+        super()._on_changed()
 
     @property
     def is_output(self) -> bool:
