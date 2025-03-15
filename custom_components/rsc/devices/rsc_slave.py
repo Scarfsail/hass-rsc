@@ -112,6 +112,8 @@ class RscSlave:
 
         self._is_online = is_online
         if is_online:
+            for output in self.outputs:
+                output.is_online = True
             self._logger.info(f"Slave {self.slave_id} is online")
         else:
             self.all_outputs_requested = True

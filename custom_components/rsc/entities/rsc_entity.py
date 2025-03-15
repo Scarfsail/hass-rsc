@@ -1,11 +1,17 @@
 from abc import ABC, abstractmethod
+import logging
+import threading
 from typing import Any
+
+from jinja2 import Environment
 
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.event import run_callback_threadsafe
 
 from ..devices.ios.abstract.rsc_input import RscInput
 from ..devices.ios.abstract.rsc_output import RscOutput
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class RscEntity(ABC, Entity):
@@ -33,7 +39,7 @@ class RscEntity(ABC, Entity):
 
         self._name: str = config.get("title", self._id)
         self._template: str | None = config.get("template")
-        self.unit: str | None = config.get("unit")
+        self._unit: str | None = config.get("unit")
 
     @property
     def name(self):
@@ -59,11 +65,24 @@ class RscEntity(ABC, Entity):
 
     def io_changed(self):
         """Handle changes in IO states."""
-        self.value = (
-            self._rsc_input.value if self._rsc_input else self._rsc_output.value
-        )
+        raw_value = self._rsc_input.value if self._rsc_input else self._rsc_output.value
+        if self._template:
+            try:
+                env = Environment()
+                template = env.from_string(self._template)
+                self.value = template.render(value=raw_value)
+            except Exception as e:
+                _LOGGER.error(
+                    f"Error rendering template for entity: {self._name}. Error: {self._template}: {e}"
+                )
+                self.value = raw_value
+        else:
+            self.value = raw_value
 
-        run_callback_threadsafe(self.hass.loop, self.async_write_ha_state)
+        if threading.current_thread() is threading.main_thread():
+            self.async_write_ha_state()
+        else:
+            run_callback_threadsafe(self.hass.loop, self.async_write_ha_state)
 
     def set_io(self, value):
         """Set the value of the IO."""

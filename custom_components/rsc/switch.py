@@ -1,5 +1,5 @@
 from config.custom_components.rsc.entities.rsc_entity_type import RscEntityType
-from homeassistant.components.sensor import SensorEntity, SensorStateClass
+from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -18,22 +18,25 @@ async def async_setup_entry(
         const.ENTITIES_MANAGER
     ]
     mgr.register_entity_type(
-        RscEntityDefinition(RscEntityType.SENSOR, RscSensor, async_add_entities)
+        RscEntityDefinition(RscEntityType.SWITCH, RscSwitch, async_add_entities)
     )
 
 
-class RscSensor(SensorEntity, RscEntity):
+class RscSwitch(SwitchEntity, RscEntity):
     @property
-    def state(self):
-        """Return the state of the sensor."""
+    def device_class(self):
+        """Return the device class of the switch."""
+        return SwitchDeviceClass.OUTLET
+
+    @property
+    def is_on(self):
+        """Return the state of the switch."""
         return self.value
 
-    @property
-    def unit_of_measurement(self):
-        """Return the unit of measurement."""
-        return self._unit
+    async def async_turn_on(self, **kwargs):
+        """Turn the entity on."""
+        self.set_io(True)
 
-    @property
-    def state_class(self):
-        """Return the state class of the sensor."""
-        return SensorStateClass.MEASUREMENT
+    async def async_turn_off(self, **kwargs):
+        """Turn the entity off."""
+        self.set_io(False)
