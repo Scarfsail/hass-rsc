@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+# from ....entities.rsc_entity import RscEntity
+
 from .rsc_io_type import RscIoType
 
 
@@ -10,9 +12,12 @@ class RscIo(ABC):
 
         self._value = default_value
         self._is_online = False
+        self._entities = []
 
     def _on_changed(self) -> None:
-        pass
+        """Notify all registered entities of a change."""
+        for entity in self._entities:
+            entity.io_changed()
 
     def _on_is_online_change(self) -> None:
         """Handle changes to the online status."""
@@ -42,6 +47,10 @@ class RscIo(ABC):
             self._is_online = value
             self._on_is_online_change()
             self._on_changed()
+
+    def register_entity(self, entity) -> None:
+        """Register an entity to be notified of changes."""
+        self._entities.append(entity)
 
     @abstractmethod
     def get_io_data_length(self) -> int:

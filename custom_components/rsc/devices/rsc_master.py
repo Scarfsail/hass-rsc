@@ -82,6 +82,7 @@ class RscMaster:
                         # Forward the response to the slave for processing
                         slave.process_incoming_data(response_data)
                     else:
+                        slave.check_if_is_still_online()
                         self._logger.debug(
                             f"No response received from slave {slave.slave_id}"
                         )

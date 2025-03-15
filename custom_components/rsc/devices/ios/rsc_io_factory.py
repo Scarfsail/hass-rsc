@@ -27,15 +27,15 @@ def create_rsc_input(io_config: dict[str, Any]) -> RscInput:
     input_id = io_config.get("id")
     input_type = io_config.get("type", "").lower()
     input_title = io_config.get("title", f"Input {input_id}")
-    input_units = io_config.get("units", "")
+    input_unit = io_config.get("unit", "")
 
     match input_type:
         case "aif" | "float":
-            return RscAif(input_id, input_title, input_units)
+            return RscAif(input_id, input_title, input_unit)
         case "aii" | "integer":
-            return RscAii(input_id, input_title, input_units)
+            return RscAii(input_id, input_title, input_unit)
         case "aib" | "byte":
-            return RscAib(input_id, input_title, input_units)
+            return RscAib(input_id, input_title, input_unit)
         case "di" | "binary":
             return RscDi(input_id, input_title)
         case _:
@@ -55,17 +55,17 @@ def create_rsc_output(io_config: dict[str, Any]) -> RscOutput:
     output_id = io_config.get("id")
     output_type = io_config.get("type", "").lower()
     output_title = io_config.get("title", f"Output {output_id}")
-    output_units = io_config.get("units", "")
+    output_unit = io_config.get("unit", "")
 
     match output_type:
         case "aob" | "byte":
-            return RscAob(output_id, output_title, output_units)
+            return RscAob(output_id, output_title, output_unit)
         case "aob_pulse" | "byte_pulse":
-            return RscAobPulse(output_id, output_title, output_units)
+            return RscAobPulse(output_id, output_title, output_unit)
         case "aoi" | "integer":
-            return RscAoi(output_id, output_title, output_units)
+            return RscAoi(output_id, output_title, output_unit)
         case "aoi_pulse" | "integer_pulse":
-            return RscAoiPulse(output_id, output_title, output_units)
+            return RscAoiPulse(output_id, output_title, output_unit)
         case "do" | "binary":
             return RscDo(output_id, output_title)
         case "do_pulse" | "binary_pulse":

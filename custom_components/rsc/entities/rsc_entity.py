@@ -1,0 +1,73 @@
+from abc import ABC, abstractmethod
+from typing import Any
+
+from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.event import run_callback_threadsafe
+
+from ..devices.ios.abstract.rsc_input import RscInput
+from ..devices.ios.abstract.rsc_output import RscOutput
+
+
+class RscEntity(ABC, Entity):
+    def __init__(
+        self,
+        config: dict[str, Any],
+        rsc_input: RscInput = None,
+        rsc_output: RscOutput = None,
+    ):
+        super().__init__()
+        self.value = None
+        self._init_from_config(config)
+        if (rsc_input is None) and (rsc_output is None):
+            raise ValueError("Either rsc_input or rsc_output must be provided")
+        self._rsc_input = rsc_input
+        self._rsc_output = rsc_output
+
+    def _init_from_config(self, config: dict[str, Any]) -> None:
+        """Initialize the entity from the configuration."""
+        self._config = config
+
+        self._id: str = config.get("id")
+        if not self._id:
+            raise ValueError("ID is required in the configuration")
+
+        self._name: str = config.get("title", self._id)
+        self._template: str | None = config.get("template")
+        self.unit: str | None = config.get("unit")
+
+    @property
+    def name(self):
+        """Return the name of the sensor."""
+        return self._name
+
+    @property
+    def suggested_object_id(self):
+        """Return the suggested object id."""
+        return self._id
+
+    @property
+    def unique_id(self):
+        """Return a unique ID for the sensor."""
+        return self._id
+
+    @property
+    def available(self):
+        """Return True if the sensor is available."""
+        return (self._rsc_input.is_online if self._rsc_input else True) and (
+            self._rsc_output.is_online if self._rsc_output else True
+        )
+
+    def io_changed(self):
+        """Handle changes in IO states."""
+        self.value = (
+            self._rsc_input.value if self._rsc_input else self._rsc_output.value
+        )
+
+        run_callback_threadsafe(self.hass.loop, self.async_write_ha_state)
+
+    def set_io(self, value):
+        """Set the value of the IO."""
+        if self._rsc_output is None:
+            raise ValueError("RscOutput is not set")
+
+        self._rsc_output.value = value

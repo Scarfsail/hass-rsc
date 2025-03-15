@@ -1,6 +1,8 @@
 import datetime
 import logging
-from typing import Any, List, Literal, TypeVar, Union
+from typing import Any, Literal
+
+from ..entities.rsc_entities_manager import RscEntitiesManager
 
 from .ios.abstract.rsc_input import RscInput
 from .ios.abstract.rsc_output import RscOutput
@@ -16,12 +18,20 @@ class RscSlave:
     RSC_DATA_TYPE_INPUTS = 1
     RSC_DATA_TYPE_OUTPUTS = 2
 
-    def __init__(self, slave_id: int, title: str, ios_config: dict[str, Any]):
+    def __init__(
+        self,
+        slave_id: int,
+        title: str,
+        ios_config: dict[str, Any],
+        entities_manager: RscEntitiesManager,
+    ):
         """Initialize RscSlave with ID, title, and I/O configuration."""
         self._logger = logging.getLogger(__name__ + f" - Slave {slave_id}")
 
         self.slave_id = slave_id
         self.title = title
+        self._entities_manager = entities_manager
+
         self.inputs: list[RscInput] = self._create_ios(ios_config, "inputs")
         self.outputs: list[RscOutput] = self._create_ios(ios_config, "outputs")
 
@@ -105,6 +115,10 @@ class RscSlave:
             self._logger.info(f"Slave {self.slave_id} is online")
         else:
             self.all_outputs_requested = True
+            for output in self.outputs:
+                output.is_online = False
+            for inp in self.inputs:
+                inp.is_online = False
             self._logger.info(f"Slave {self.slave_id} is offline")
 
     def process_incoming_data(self, data: bytes):
@@ -112,7 +126,7 @@ class RscSlave:
         self.last_processed_incoming_data = datetime.datetime.now()
 
         if not data:
-            self._check_if_is_still_online()
+            self.check_if_is_still_online()
             return
 
         try:
@@ -174,7 +188,7 @@ class RscSlave:
             self._logger.error(
                 f"Error while processing data from slave {self.slave_id}: {str(ex)}"
             )
-            self._check_if_is_still_online()
+            self.check_if_is_still_online()
 
     def _process_incoming_inputs(self, data: bytes, position_in_buff: int) -> bool:
         """Process incoming inputs data.
@@ -215,20 +229,20 @@ class RscSlave:
 
         return (True, position_in_buff)
 
-    def _check_if_is_still_online(self):
+    def check_if_is_still_online(self):
         """Check if the slave is still online based on timing."""
         if not self._is_online:
             return
 
         # Check if valid data wasn't received within last 4 seconds
         now = datetime.datetime.now()
+        timeout = datetime.timedelta(seconds=4)
         if (
             self.last_received_valid_data
-            and now >= self.last_received_valid_data + datetime.timedelta(seconds=4)
+            and now >= self.last_received_valid_data + timeout
         ):
             self._logger.error(
-                f"Valid data from RSC Slave {self.slave_id} weren't received within last 4 seconds. "
-                f"Last valid data was received {self.last_received_valid_data}. Setting the slave to offline."
+                f"Valid data from RSC Slave {self.slave_id}, {self.title} weren't received within {timeout.total_seconds()} seconds. Last valid data was received {self.last_received_valid_data}. Setting the slave to offline."
             )
             self.set_is_online(False)
 
@@ -255,6 +269,14 @@ class RscSlave:
             self._logger.debug(
                 f"Created {io_type[:-1]}: {io_obj.title} (ID: {io_obj.io_index})"
             )
+
+            # Entities
+            entities = io_config.get("entities")
+            if entities:
+                for entity_config in entities:
+                    # Merge IO config with entity config without creating new objects
+                    merged_config = {**io_config, **entity_config}
+                    self._entities_manager.register_entity_config(merged_config, io_obj)
 
         # Validate I/O indices - must start at 0, have no gaps, and no duplicates
         io_indices = [io.io_index for io in ios]

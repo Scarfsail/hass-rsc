@@ -2,7 +2,8 @@ import os
 from pathlib import Path
 import yaml
 import logging
-from typing import Dict, List
+
+from ..entities.rsc_entities_manager import RscEntitiesManager
 from .rsc_master import RscMaster
 from .rsc_slave import RscSlave
 
@@ -10,10 +11,11 @@ from .rsc_slave import RscSlave
 class RscManager:
     """Class to manage RSC masters and slaves from configuration."""
 
-    def __init__(self, config_path: Path):
+    def __init__(self, config_path: Path, entities_manager: RscEntitiesManager):
         """Initialize the RSC manager with config file path."""
         self.config_path = config_path
-        self.masters: Dict[str, RscMaster] = {}
+        self._entities_manager = entities_manager
+        self._masters: dict[str, RscMaster] = {}
         self._logger = logging.getLogger(__name__)
 
     def load_config(self) -> bool:
@@ -52,17 +54,21 @@ class RscManager:
                     ios_config = slave_config.get("ios", {})
 
                     # Create slave instance
-                    slave = RscSlave(slave_id, slave_title, ios_config)
+                    slave = RscSlave(
+                        slave_id, slave_title, ios_config, self._entities_manager
+                    )
                     slaves.append(slave)  # Add to list instead of dictionary
 
                 # Create master with its slaves
                 master = RscMaster(port, title, slaves)
-                self.masters[port] = master
+                self._masters[port] = master
                 self._logger.info(
                     f"Created master: {title} on port {port} with {len(slaves)} slaves"
                 )
 
-            return True
+                self._entities_manager.create_entities()
+
+                return True
 
         except Exception as e:
             self._logger.error(f"Error loading configuration: {e}")
@@ -71,7 +77,7 @@ class RscManager:
     def start_all_masters(self) -> bool:
         """Start communication for all masters."""
         success = True
-        for port, master in self.masters.items():
+        for port, master in self._masters.items():
             if not master.begin_communication():
                 self._logger.error(
                     f"Failed to start communication for master on port {port}"
@@ -81,6 +87,6 @@ class RscManager:
 
     def stop_all_masters(self) -> None:
         """Stop communication for all masters."""
-        for port, master in self.masters.items():
+        for port, master in self._masters.items():
             master.stop_communication()
         self._logger.info("All masters stopped")
