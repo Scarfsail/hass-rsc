@@ -24,7 +24,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     await hass.config_entries.async_forward_entry_setups(
         entry,
-        ["sensor", "switch"],
+        ["sensor", "switch", "binary_sensor"],
         # list(RscEntityType.__members__.keys())
     )
 

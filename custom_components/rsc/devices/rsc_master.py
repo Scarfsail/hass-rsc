@@ -92,9 +92,9 @@ class RscMaster:
             except Exception as e:
                 slave.is_online = False
                 self._logger.error(f"Error in communication loop: {e}")
-
-            # Move to the next slave
-            current_slave_index = (current_slave_index + 1) % len(self.slaves)
+            finally:
+                # Move to the next slave
+                current_slave_index = (current_slave_index + 1) % len(self.slaves)
 
     def send_data_and_receive_response(self, slave_address: byte, data: bytes) -> bytes:
         """Send data to the slave and receive the response."""
