@@ -27,9 +27,7 @@ async def async_setup_entry(
 
 
 class RscGate(CoverEntity, RscEntity):
-    @property
-    def device_class(self):
-        """Return the device class of the switch."""
+    def _default_device_class(self):
         return CoverDeviceClass.GARAGE
 
     @property

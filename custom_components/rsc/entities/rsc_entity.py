@@ -40,6 +40,12 @@ class RscEntity(ABC, Entity):
         self._name: str = config.get("title", self._id)
         self._template: str | None = config.get("template")
         self._unit: str | None = config.get("unit")
+        device_class = config.get("device_class", self._default_device_class())
+        if device_class:
+            self._attr_device_class = device_class
+
+    def _default_device_class(self) -> str | None:
+        return None
 
     @property
     def name(self):

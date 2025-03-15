@@ -23,8 +23,7 @@ async def async_setup_entry(
 
 
 class RscSwitch(SwitchEntity, RscEntity):
-    @property
-    def device_class(self):
+    def _default_device_class(self):
         """Return the device class of the switch."""
         return SwitchDeviceClass.OUTLET
 
