@@ -22,7 +22,7 @@ class RscEntity(ABC, Entity):
         rsc_output: RscOutput = None,
     ):
         super().__init__()
-        self.value = None
+        self.rsc_value = None
         self._init_from_config(config)
         if (rsc_input is None) and (rsc_output is None):
             raise ValueError("Either rsc_input or rsc_output must be provided")
@@ -70,14 +70,14 @@ class RscEntity(ABC, Entity):
             try:
                 env = Environment()
                 template = env.from_string(self._template)
-                self.value = template.render(value=raw_value)
+                self.rsc_value = template.render(value=raw_value)
             except Exception as e:
                 _LOGGER.error(
                     f"Error rendering template for entity: {self._name}. Error: {self._template}: {e}"
                 )
-                self.value = raw_value
+                self.rsc_value = raw_value
         else:
-            self.value = raw_value
+            self.rsc_value = raw_value
 
         if threading.current_thread() is threading.main_thread():
             self.async_write_ha_state()

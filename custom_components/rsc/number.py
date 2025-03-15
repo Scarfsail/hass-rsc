@@ -1,5 +1,5 @@
 from config.custom_components.rsc.entities.rsc_entity_type import RscEntityType
-from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
+from homeassistant.components.number import NumberEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -18,25 +18,21 @@ async def async_setup_entry(
         const.ENTITIES_MANAGER
     ]
     mgr.register_entity_type(
-        RscEntityDefinition(RscEntityType.SWITCH, RscSwitch, async_add_entities)
+        RscEntityDefinition(RscEntityType.NUMBER, RscNumber, async_add_entities)
     )
 
 
-class RscSwitch(SwitchEntity, RscEntity):
+class RscNumber(NumberEntity, RscEntity):
     @property
-    def device_class(self):
-        """Return the device class of the switch."""
-        return SwitchDeviceClass.OUTLET
+    def step(self):
+        """Return the step value."""
+        return 1
 
     @property
-    def is_on(self):
-        """Return the state of the switch."""
+    def value(self):
+        """Return the current value."""
         return self.rsc_value
 
-    async def async_turn_on(self, **kwargs):
+    def set_value(self, value):
         """Turn the entity on."""
-        self.set_io(True)
-
-    async def async_turn_off(self, **kwargs):
-        """Turn the entity off."""
-        self.set_io(False)
+        self.set_io(value)

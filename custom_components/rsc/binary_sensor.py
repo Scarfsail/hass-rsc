@@ -28,4 +28,4 @@ class RscBinarySensor(BinarySensorEntity, RscEntity):
     @property
     def state(self):
         """Return the state of the sensor."""
-        return "on" if self.value else "off"
+        return "on" if self.rsc_value else "off"

@@ -26,7 +26,7 @@ class RscSensor(SensorEntity, RscEntity):
     @property
     def state(self):
         """Return the state of the sensor."""
-        return self.value
+        return self.rsc_value
 
     @property
     def unit_of_measurement(self):

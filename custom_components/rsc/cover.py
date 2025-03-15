@@ -42,22 +42,22 @@ class RscGate(CoverEntity, RscEntity):
     @property
     def is_closed(self):
         """Return the state of the sensor."""
-        return self.value == 0
+        return self.rsc_value == 0
 
     @property
     def is_closing(self):
         """Return the state of the sensor."""
-        return self.value == 3
+        return self.rsc_value == 3
 
     @property
     def is_opening(self):
         """Return the state of the sensor."""
-        return self.value == 4
+        return self.rsc_value == 4
 
     @property
     def current_cover_position(self):
         """Return the state of the sensor."""
-        match self.value:
+        match self.rsc_value:
             case 0:  # Closed
                 return 0
             case 1:  # OpenedPartially
