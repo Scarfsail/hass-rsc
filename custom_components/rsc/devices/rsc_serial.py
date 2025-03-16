@@ -152,7 +152,7 @@ class RscSerial:
                                 f"Response wasn't fully received for slave: {slave_address}. Received bytes: {len(input_buffer)}, expected packet size: {packet_size}"
                             )
                         return b""
-                    time.sleep(20 / 1000)
+                    time.sleep(10 / 1000)
                     continue
             return bytes(input_buffer)
 
