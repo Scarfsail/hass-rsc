@@ -81,12 +81,12 @@ class RscMaster:
                     if response_data:
                         # Forward the response to the slave for processing
                         slave.process_incoming_data(response_data)
+                        time.sleep(100 / 1000)  # Small delay to avoid flooding the bus
                     else:
                         slave.check_if_is_still_online()
                         self._logger.debug(
                             f"No response received from slave {slave.slave_id}"
                         )
-                    time.sleep(50 / 1000)  # Small delay to avoid flooding the bus
                 else:
                     self._logger.debug(f"No data to send to slave {slave.slave_id}")
 
