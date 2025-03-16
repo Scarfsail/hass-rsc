@@ -66,9 +66,8 @@ class RscManager:
                     f"Created master: {title} on port {port} with {len(slaves)} slaves"
                 )
 
-                self._entities_manager.create_entities()
-
-                return True
+            self._entities_manager.create_entities()
+            return True
 
         except Exception as e:
             self._logger.error(f"Error loading configuration: {e}")

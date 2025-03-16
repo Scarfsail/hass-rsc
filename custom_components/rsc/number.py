@@ -23,10 +23,14 @@ async def async_setup_entry(
 
 
 class RscNumber(NumberEntity, RscEntity):
-    @property
-    def step(self):
-        """Return the step value."""
-        return 1
+    def __init__(self, config, rsc_input=None, rsc_output=None):
+        super().__init__(config, rsc_input, rsc_output)
+        if self._config["min"] is not None:
+            self._attr_native_max_value = self._config.get("min")
+        if self._config["max"] is not None:
+            self._attr_native_min_value = self._config.get("max")
+
+        self._attr_native_step = self._config.get("step", 1)
 
     @property
     def value(self):
@@ -34,5 +38,5 @@ class RscNumber(NumberEntity, RscEntity):
         return self.rsc_value
 
     def set_value(self, value):
-        """Turn the entity on."""
+        """Set the entity's value."""
         self.set_io(value)
