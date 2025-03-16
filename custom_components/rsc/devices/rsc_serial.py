@@ -129,7 +129,10 @@ class RscSerial:
             start_time = time.time()
 
             while len(input_buffer) < packet_size:
-                received_buffer = self.serial.read_all()
+                waiting_bytes = self.serial.in_waiting
+                received_buffer = self.serial.read(
+                    waiting_bytes if waiting_bytes > 0 else 1
+                )
 
                 if len(received_buffer) > 0 and packet_size == 255:
                     packet_size = received_buffer[0]
@@ -149,8 +152,8 @@ class RscSerial:
                                 f"Response wasn't fully received for slave: {slave_address}. Received bytes: {len(input_buffer)}, expected packet size: {packet_size}"
                             )
                         return b""
+                    time.sleep(20 / 1000)
                     continue
-                time.sleep(20 / 1000)
             return bytes(input_buffer)
 
         except Exception as ex:
