@@ -23,8 +23,8 @@ async def async_setup_entry(
 
 
 class RscLight(LightEntity, RscEntity):
-    def __init__(self, config, rsc_input=None, rsc_output=None):
-        super().__init__(config, rsc_input, rsc_output)
+    def __init__(self, *args):
+        super().__init__(*args)
         self._attr_supported_color_modes = [ColorMode.ONOFF]
         self._attr_color_mode = ColorMode.ONOFF
 

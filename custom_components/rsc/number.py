@@ -23,12 +23,12 @@ async def async_setup_entry(
 
 
 class RscNumber(NumberEntity, RscEntity):
-    def __init__(self, config, rsc_input=None, rsc_output=None):
-        super().__init__(config, rsc_input, rsc_output)
-        min_value = config.get("min", None)
+    def __init__(self, *args):
+        super().__init__(*args)
+        min_value = self._config.get("min", None)
         if min_value is not None:
             self._attr_native_min_value = min_value
-        max_value = config.get("max", None)
+        max_value = self._config.get("max", None)
         if max_value is not None:
             self._attr_native_max_value = max_value
 
