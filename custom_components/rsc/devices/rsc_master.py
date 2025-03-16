@@ -31,7 +31,8 @@ class RscMaster:
                 self._logger.info(f"Successfully opened serial port {self.port}")
                 self.running = True
                 self.communication_thread = threading.Thread(
-                    target=self._communication_loop
+                    target=self._communication_loop,
+                    name="RSC Master - " + self.title,
                 )
                 self.communication_thread.daemon = True
                 self.communication_thread.start()

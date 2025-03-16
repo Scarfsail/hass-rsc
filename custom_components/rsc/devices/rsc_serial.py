@@ -150,7 +150,7 @@ class RscSerial:
                             )
                         return b""
                     continue
-
+                time.sleep(20 / 1000)
             return bytes(input_buffer)
 
         except Exception as ex:
