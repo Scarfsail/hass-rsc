@@ -8,3 +8,4 @@ class RscEntityType(StrEnum):
     SWITCH = "switch"
     GATE = "gate"
     NUMBER = "number"
+    LIGHT = "light"
