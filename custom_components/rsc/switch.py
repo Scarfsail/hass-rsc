@@ -1,4 +1,3 @@
-from config.custom_components.rsc.entities.rsc_entity_type import RscEntityType
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -8,6 +7,7 @@ from . import const
 from .entities.rsc_entities_manager import RscEntitiesManager
 from .entities.rsc_entity import RscEntity
 from .entities.rsc_entity_definition import RscEntityDefinition
+from .entities.rsc_entity_type import RscEntityType
 
 
 async def async_setup_entry(

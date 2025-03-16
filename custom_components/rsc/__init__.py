@@ -1,14 +1,12 @@
 import logging
 from pathlib import Path
 
-from config.custom_components.rsc.entities.rsc_entity_type import RscEntityType
-
-from .entities.rsc_entities_manager import RscEntitiesManager
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from . import const
 from .devices.rsc_manager import RscManager
+from .entities.rsc_entities_manager import RscEntitiesManager
 
 _LOGGER = logging.getLogger(__name__)
 

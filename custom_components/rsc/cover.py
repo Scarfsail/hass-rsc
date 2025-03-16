@@ -1,4 +1,3 @@
-from config.custom_components.rsc.entities.rsc_entity_type import RscEntityType
 from homeassistant.components.cover import (
     CoverDeviceClass,
     CoverEntity,
@@ -12,6 +11,7 @@ from . import const
 from .entities.rsc_entities_manager import RscEntitiesManager
 from .entities.rsc_entity import RscEntity
 from .entities.rsc_entity_definition import RscEntityDefinition
+from .entities.rsc_entity_type import RscEntityType
 
 
 async def async_setup_entry(
