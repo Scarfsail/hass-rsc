@@ -16,7 +16,7 @@ class RscAob(RscOutput):
         return 1
 
     def append_value(self, data: bytearray, position: int) -> None:
-        data[position] = self.value & 0xFF  # Ensure it's in byte range (0-255)
+        data[position] = int(self.value) & 0xFF  # Ensure it's in byte range (0-255)
 
     @property
     def units(self) -> str:
