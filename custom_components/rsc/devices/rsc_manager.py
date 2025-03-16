@@ -1,8 +1,12 @@
+import logging
 import os
 from pathlib import Path
-import yaml
-import logging
 
+import yaml
+
+from homeassistant.helpers.device_registry import DeviceRegistry
+
+from .. import const
 from ..entities.rsc_entities_manager import RscEntitiesManager
 from .rsc_master import RscMaster
 from .rsc_slave import RscSlave
@@ -11,10 +15,18 @@ from .rsc_slave import RscSlave
 class RscManager:
     """Class to manage RSC masters and slaves from configuration."""
 
-    def __init__(self, config_path: Path, entities_manager: RscEntitiesManager):
+    def __init__(
+        self,
+        config_path: Path,
+        entities_manager: RscEntitiesManager,
+        device_registry: DeviceRegistry,
+        config_entry_id: str,
+    ):
         """Initialize the RSC manager with config file path."""
         self.config_path = config_path
         self._entities_manager = entities_manager
+        self._device_registry = device_registry
+        self._config_entry_id = config_entry_id
         self._masters: dict[str, RscMaster] = {}
         self._logger = logging.getLogger(__name__)
 
@@ -54,8 +66,20 @@ class RscManager:
                     ios_config = slave_config.get("ios", {})
 
                     # Create slave instance
+                    device_uid = port + "_" + str(slave_id)
+                    self._device_registry.async_get_or_create(
+                        config_entry_id=self._config_entry_id,
+                        identifiers={(const.DOMAIN, device_uid)},
+                        manufacturer="Scarfsail",
+                        model="RSC_Slave",
+                        name=slave_title,
+                    )
                     slave = RscSlave(
-                        slave_id, slave_title, ios_config, self._entities_manager
+                        slave_id,
+                        slave_title,
+                        ios_config,
+                        self._entities_manager,
+                        device_uid,
                     )
                     slaves.append(slave)  # Add to list instead of dictionary
 

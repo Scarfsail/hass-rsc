@@ -8,6 +8,7 @@ from jinja2 import Environment
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.event import run_callback_threadsafe
 
+from .. import const
 from ..devices.ios.abstract.rsc_input import RscInput
 from ..devices.ios.abstract.rsc_output import RscOutput
 
@@ -46,6 +47,12 @@ class RscEntity(ABC, Entity):
 
     def _default_device_class(self) -> str | None:
         return None
+
+    @property
+    def device_info(self):
+        return {
+            "identifiers": {(const.DOMAIN, self._config["device_uid"])},
+        }
 
     @property
     def name(self):

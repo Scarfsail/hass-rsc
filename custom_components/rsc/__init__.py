@@ -3,6 +3,7 @@ from pathlib import Path
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 
 from . import const
 from .devices.rsc_manager import RscManager
@@ -24,8 +25,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         entry,
         ["sensor", "switch", "binary_sensor", "cover", "button", "number", "light"],
     )
+    device_registry = dr.async_get(hass)
 
-    rsc_manager = RscManager(Path(hass.config.path("rsc.yaml")), entities_manager)
+    rsc_manager = RscManager(
+        Path(hass.config.path("rsc.yaml")),
+        entities_manager,
+        device_registry,
+        entry.entry_id,
+    )
     if not rsc_manager.load_config():
         _LOGGER.error("Failed to load configuration")
         return False

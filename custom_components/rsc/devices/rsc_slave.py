@@ -24,6 +24,7 @@ class RscSlave:
         title: str,
         ios_config: dict[str, Any],
         entities_manager: RscEntitiesManager,
+        device_uid: str,
     ):
         """Initialize RscSlave with ID, title, and I/O configuration."""
         self._logger = logging.getLogger(__name__ + f" - Slave {slave_id}")
@@ -31,7 +32,7 @@ class RscSlave:
         self.slave_id = slave_id
         self.title = title
         self._entities_manager = entities_manager
-
+        self._device_uid = device_uid
         self.inputs: list[RscInput] = self._create_ios(ios_config, "inputs")
         self.outputs: list[RscOutput] = self._create_ios(ios_config, "outputs")
 
@@ -278,6 +279,7 @@ class RscSlave:
                 for entity_config in entities:
                     # Merge IO config with entity config without creating new objects
                     merged_config = {**io_config, **entity_config}
+                    merged_config["device_uid"] = self._device_uid
                     self._entities_manager.register_entity_config(merged_config, io_obj)
 
         # Validate I/O indices - must start at 0, have no gaps, and no duplicates
