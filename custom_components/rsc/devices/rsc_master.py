@@ -86,6 +86,7 @@ class RscMaster:
                         self._logger.debug(
                             f"No response received from slave {slave.slave_id}"
                         )
+                    time.sleep(50 / 1000)  # Small delay to avoid flooding the bus
                 else:
                     self._logger.debug(f"No data to send to slave {slave.slave_id}")
 
