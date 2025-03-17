@@ -64,6 +64,9 @@ class RscSlave:
         """
         self.last_sent_data = datetime.datetime.now()
 
+        # Record timestamp for communication period calculation
+        self.telemetry.record_communication_timestamp()
+
         data = bytearray(255)  # Initialize with max size
         position_in_buff = 0
 

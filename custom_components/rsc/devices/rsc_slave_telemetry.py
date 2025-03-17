@@ -1,5 +1,6 @@
 from collections import deque
 import datetime
+import time
 import logging
 
 from ..entities.rsc_entity_type import RscEntityType
@@ -37,6 +38,18 @@ class RscSlaveTelemetry:
 
         # Communication errors tracking
         self._comm_errors = deque(maxlen=100)  # Store timestamps of errors
+
+        # Communication period tracking
+        self._comm_period_timestamps = deque(
+            maxlen=100
+        )  # Store timestamps of get_data_for_slave calls
+        self._last_comm_timestamp = (
+            None  # Last timestamp when get_data_for_slave was called
+        )
+
+        # Last update timestamps for throttling
+        self._last_response_time_update = 0
+        self._last_comm_period_update = 0
 
         self._create_entities()
 
@@ -78,9 +91,19 @@ class RscSlaveTelemetry:
             0, self._compose_entity_title("Povolit komunikaci"), True
         )
         self._slave_enabled_io.is_online = True
-
         self._register_entity(
             RscEntityType.SWITCH, "slave_enabled", self._slave_enabled_io, "switch"
+        )
+
+        # Add communication period sensor
+        self._comm_period_io = RscAii(
+            0, self._compose_entity_title("Perioda komunikace"), "ms"
+        )
+        self._comm_period_io.is_online = True
+        self._register_entity(
+            RscEntityType.SENSOR,
+            "comm_period",
+            self._comm_period_io,
         )
 
     @property
@@ -121,20 +144,24 @@ class RscSlaveTelemetry:
             response_time_ms: Response time in milliseconds
         """
         now = datetime.datetime.now()
+        current_time = time.time()
         self.response_times.append((now, response_time_ms))
 
         # Remove measurements older than 5 seconds
-        cutoff_time = now - datetime.timedelta(seconds=5)
+        cutoff_time = now - datetime.timedelta(seconds=2)
         while self.response_times and self.response_times[0][0] < cutoff_time:
             self.response_times.popleft()
 
-        # Calculate new average if there are measurements
-        if self.response_times:
-            self._average_response_time_io.value = int(
-                sum(rt[1] for rt in self.response_times) / len(self.response_times)
-            )
-        else:
-            self._average_response_time_io.value = 0
+        # Calculate and update average if more than 1 second has passed since last update
+        if current_time - self._last_response_time_update >= 1.0:
+            if self.response_times:
+                self._average_response_time_io.value = int(
+                    sum(rt[1] for rt in self.response_times) / len(self.response_times)
+                )
+            else:
+                self._average_response_time_io.value = 0
+
+            self._last_response_time_update = current_time
 
         self.update_communication_error_rate()  # it needs to be also here to remove old errors when communication runs just fine and no errors are added
 
@@ -152,3 +179,38 @@ class RscSlaveTelemetry:
 
         # Update the errors per minute sensor
         self._comm_errors_per_minute_io.value = len(self._comm_errors)
+
+    def record_communication_timestamp(self) -> None:
+        """Record a timestamp for communication period calculation."""
+        now_timestamp = time.time()
+
+        if self._last_comm_timestamp is not None:
+            # Calculate period in milliseconds
+            period_ms = (now_timestamp - self._last_comm_timestamp) * 1000
+            self._comm_period_timestamps.append((now_timestamp, period_ms))
+
+        # Always update the last timestamp
+        self._last_comm_timestamp = now_timestamp
+
+        # Calculate average period over the last 5 seconds
+        # but always keep at least two measurements even if they're older
+        cutoff_time = now_timestamp - 2.0  # 2 seconds
+
+        # Make sure we keep at least 2 timestamps
+        while (
+            len(self._comm_period_timestamps) > 2
+            and self._comm_period_timestamps[0][0] < cutoff_time
+        ):
+            self._comm_period_timestamps.popleft()
+
+        # Calculate and update average if more than 1 second has passed since last update
+        if now_timestamp - self._last_comm_period_update >= 1.0:
+            if self._comm_period_timestamps:
+                avg_period = sum(p[1] for p in self._comm_period_timestamps) / len(
+                    self._comm_period_timestamps
+                )
+                self._comm_period_io.value = int(avg_period)
+            else:
+                self._comm_period_io.value = 0
+
+            self._last_comm_period_update = now_timestamp
