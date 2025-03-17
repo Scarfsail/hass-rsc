@@ -5,6 +5,7 @@ from typing import Any
 
 from jinja2 import Environment
 
+from homeassistant.const import EntityCategory
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.event import run_callback_threadsafe
 
@@ -43,9 +44,14 @@ class RscEntity(ABC, Entity):
         self._name: str = config.get("title", self._id)
         self._template: str | None = config.get("template")
         self._unit: str | None = config.get("unit")
+
         device_class = config.get("device_class", self._default_device_class())
         if device_class:
             self._attr_device_class = device_class
+
+        entity_category = config.get("entity_category")
+        if entity_category:
+            self._attr_entity_category = EntityCategory(entity_category)
 
     def _default_device_class(self) -> str | None:
         return None

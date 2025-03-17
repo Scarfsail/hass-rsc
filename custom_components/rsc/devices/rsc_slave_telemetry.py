@@ -71,7 +71,11 @@ class RscSlaveTelemetry:
         )
 
     def _register_entity(
-        self, type: RscEntityType, entity_id: str, io: RscIo, device_class: str = None
+        self,
+        type: RscEntityType,
+        entity_id: str,
+        io: RscIo,
+        device_class: str | None = None,
     ) -> None:
         self._entities_manager.register_entity_config(
             {
@@ -81,6 +85,7 @@ class RscSlaveTelemetry:
                 "device_class": device_class,
                 "unit": io.unit if hasattr(io, "unit") else None,
                 "device_uid": self._device_uid,
+                "entity_category": "diagnostic",
             },
             io,
         )
