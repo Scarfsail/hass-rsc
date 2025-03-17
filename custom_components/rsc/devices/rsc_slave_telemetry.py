@@ -113,19 +113,19 @@ class RscSlaveTelemetry:
         else:
             self._average_response_time_io.value = 0
 
-        self._update_communication_error_rate()
+        self._update_communication_error_rate()  # it needs to be also here to remove old errors when communication runs just fine and no errors are added
 
     def add_communication_error(self) -> None:
         """Record a communication error and update error rate statistics."""
-        now = datetime.datetime.now()
-        self._comm_errors.append(now)
+        self._comm_errors.append(datetime.datetime.now())
 
-        # Remove errors older than 1 minute
-        one_minute_ago = now - datetime.timedelta(minutes=1)
-        while self._comm_errors and self._comm_errors[0] < one_minute_ago:
-            self._comm_errors.popleft()
         self._update_communication_error_rate()
 
     def _update_communication_error_rate(self) -> None:
+        # Remove errors older than 1 minute
+        one_minute_ago = datetime.datetime.now() - datetime.timedelta(minutes=1)
+        while self._comm_errors and self._comm_errors[0] < one_minute_ago:
+            self._comm_errors.popleft()
+
         # Update the errors per minute sensor
         self._comm_errors_per_minute_io.value = len(self._comm_errors)

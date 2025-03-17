@@ -30,6 +30,8 @@ class RscEntity(ABC, Entity):
         self._rsc_input = rsc_input
         self._rsc_output = rsc_output
 
+        self._update_rsc_value()
+
     def _init_from_config(self, config: dict[str, Any]) -> None:
         """Initialize the entity from the configuration."""
         self._config = config
@@ -76,8 +78,7 @@ class RscEntity(ABC, Entity):
             self._rsc_output.is_online if self._rsc_output else True
         )
 
-    def io_changed(self):
-        """Handle changes in IO states."""
+    def _update_rsc_value(self):
         raw_value = self._rsc_input.value if self._rsc_input else self._rsc_output.value
         if self._template:
             try:
@@ -91,6 +92,11 @@ class RscEntity(ABC, Entity):
                 self.rsc_value = raw_value
         else:
             self.rsc_value = raw_value
+
+    def io_changed(self):
+        """Handle changes in IO states."""
+
+        self._update_rsc_value()
 
         if threading.current_thread() is threading.main_thread():
             self.async_write_ha_state()

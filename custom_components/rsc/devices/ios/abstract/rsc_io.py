@@ -32,7 +32,7 @@ class RscIo(ABC):
     @value.setter
     def value(self, value) -> None:
         """Set the value and notify if it has changed."""
-        if self._value != value or not self._first_time_value_set:
+        if self._value != value:  # or not self._first_time_value_set:
             self._first_time_value_set = True
             self._value = value
             self._on_changed()
