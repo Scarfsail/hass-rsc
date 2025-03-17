@@ -8,10 +8,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import const
-from .entities.rsc_entities_manager import RscEntitiesManager
-from .entities.rsc_entity import RscEntity
-from .entities.rsc_entity_definition import RscEntityDefinition
-from .entities.rsc_entity_type import RscEntityType
+from .entities import RscEntitiesManager, RscEntity, RscEntityDefinition, RscEntityType
 
 
 async def async_setup_entry(

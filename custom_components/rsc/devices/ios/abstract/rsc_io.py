@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
 
-# from ....entities.rsc_entity import RscEntity
-
 from .rsc_io_type import RscIoType
 
 

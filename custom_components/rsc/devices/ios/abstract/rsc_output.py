@@ -4,7 +4,6 @@ import threading
 
 from .rsc_io import RscIo
 
-
 _LOGGER = logging.getLogger(__name__)
 
 
