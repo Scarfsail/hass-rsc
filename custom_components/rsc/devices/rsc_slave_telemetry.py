@@ -8,6 +8,7 @@ from .ios.abstract.rsc_io import RscIo
 
 from .ios.rsc_aii import RscAii
 from .ios.rsc_di import RscDi
+from .ios.rsc_do import RscDo
 
 from ..entities.rsc_entities_manager import RscEntitiesManager
 
@@ -40,6 +41,7 @@ class RscSlaveTelemetry:
         self._create_entities()
 
     def _create_entities(self):
+        # Add average response time sensor
         self._average_response_time_io = RscAii(
             0, self._compose_entity_title("Průměrná doba odpovědi"), "ms"
         )
@@ -50,6 +52,7 @@ class RscSlaveTelemetry:
             self._average_response_time_io,
         )
 
+        # Add online status binary sensor
         self.is_online_io = RscDi(0, self._compose_entity_title("Online"))
         self.is_online_io.is_online = True
         self._register_entity(
@@ -69,6 +72,21 @@ class RscSlaveTelemetry:
             "comm_errors_per_minute",
             self._comm_errors_per_minute_io,
         )
+
+        # Add slave enable / disable switch
+        self._slave_enabled_io = RscDo(
+            0, self._compose_entity_title("Povolit komunikaci"), True
+        )
+        self._slave_enabled_io.is_online = True
+
+        self._register_entity(
+            RscEntityType.SWITCH, "slave_enabled", self._slave_enabled_io, "switch"
+        )
+
+    @property
+    def slave_enabled(self):
+        """Get the status of the slave enabled switch."""
+        return self._slave_enabled_io.value
 
     def _register_entity(
         self,
@@ -118,15 +136,15 @@ class RscSlaveTelemetry:
         else:
             self._average_response_time_io.value = 0
 
-        self._update_communication_error_rate()  # it needs to be also here to remove old errors when communication runs just fine and no errors are added
+        self.update_communication_error_rate()  # it needs to be also here to remove old errors when communication runs just fine and no errors are added
 
     def add_communication_error(self) -> None:
         """Record a communication error and update error rate statistics."""
         self._comm_errors.append(datetime.datetime.now())
 
-        self._update_communication_error_rate()
+        self.update_communication_error_rate()
 
-    def _update_communication_error_rate(self) -> None:
+    def update_communication_error_rate(self) -> None:
         # Remove errors older than 1 minute
         one_minute_ago = datetime.datetime.now() - datetime.timedelta(minutes=1)
         while self._comm_errors and self._comm_errors[0] < one_minute_ago:

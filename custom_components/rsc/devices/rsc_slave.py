@@ -248,7 +248,8 @@ class RscSlave:
         """
         if communication_error_occured:
             self.telemetry.add_communication_error()
-
+        else:
+            self.telemetry.update_communication_error_rate()
         if not self._is_online:
             return
 
