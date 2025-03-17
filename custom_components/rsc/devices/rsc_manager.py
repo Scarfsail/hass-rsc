@@ -62,6 +62,9 @@ class RscManager:
                         continue
 
                     slave_id = slave_config["id"]
+                    slave_telemetry_entities_id = slave_config.get(
+                        "telemetry_entities_id", str(slave_id)
+                    )
                     slave_title = slave_config["title"]
                     ios_config = slave_config.get("ios", {})
 
@@ -80,6 +83,7 @@ class RscManager:
                         ios_config,
                         self._entities_manager,
                         device_uid,
+                        slave_telemetry_entities_id,
                     )
                     slaves.append(slave)  # Add to list instead of dictionary
 

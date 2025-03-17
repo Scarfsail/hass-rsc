@@ -3,6 +3,7 @@ import logging
 from typing import Any, Literal
 
 from ..entities.rsc_entities_manager import RscEntitiesManager
+from .rsc_slave_telemetry import RscSlaveTelemetry
 
 from .ios.abstract.rsc_input import RscInput
 from .ios.abstract.rsc_output import RscOutput
@@ -25,6 +26,7 @@ class RscSlave:
         ios_config: dict[str, Any],
         entities_manager: RscEntitiesManager,
         device_uid: str,
+        telemetry_entities_id: str,
     ):
         """Initialize RscSlave with ID, title, and I/O configuration."""
         self._logger = logging.getLogger(__name__ + f" - Slave {slave_id}")
@@ -41,6 +43,11 @@ class RscSlave:
         self.last_sent_data: datetime = None
         self._is_online = False
         self.last_online: datetime = None
+
+        # Initialize telemetry
+        self.telemetry = RscSlaveTelemetry(
+            entities_manager, telemetry_entities_id, title, device_uid
+        )
 
         self._logger.info(
             f"Initialized slave: {title} (ID: {slave_id}) "
@@ -112,6 +119,7 @@ class RscSlave:
             return
 
         self._is_online = is_online
+        self.telemetry.is_online_io.value = is_online
         if is_online:
             for output in self.outputs:
                 output.is_online = True
@@ -129,7 +137,7 @@ class RscSlave:
         self.last_processed_incoming_data = datetime.datetime.now()
 
         if not data:
-            self.check_if_is_still_online()
+            self.check_if_is_still_online(communication_error_occured=True)
             return
 
         try:
@@ -191,7 +199,7 @@ class RscSlave:
             self._logger.error(
                 f"Error while processing data from slave {self.slave_id}: {str(ex)}"
             )
-            self.check_if_is_still_online()
+            self.check_if_is_still_online(communication_error_occured=True)
 
     def _process_incoming_inputs(self, data: bytes, position_in_buff: int) -> bool:
         """Process incoming inputs data.
@@ -232,8 +240,15 @@ class RscSlave:
 
         return (True, position_in_buff)
 
-    def check_if_is_still_online(self):
-        """Check if the slave is still online based on timing."""
+    def check_if_is_still_online(self, communication_error_occured: bool = False):
+        """Check if the slave is still online based on timing.
+
+        Args:
+            communication_error_occured: Whether a communication error occurred
+        """
+        if communication_error_occured:
+            self.telemetry.add_communication_error()
+
         if not self._is_online:
             return
 

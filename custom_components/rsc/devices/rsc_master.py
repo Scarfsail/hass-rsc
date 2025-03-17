@@ -76,15 +76,23 @@ class RscMaster:
                 # Get data to send to the slave
                 data_to_send = slave.get_data_for_slave()
                 if data_to_send:
+                    start_time = time.time()
                     response_data = self.send_data_and_receive_response(
                         slave.slave_id, data_to_send
                     )
+                    # Calculate response time in milliseconds
+                    response_time_ms = (time.time() - start_time) * 1000
+
+                    # Store the response time in the slave's telemetry object
+                    slave.telemetry.add_response_time(response_time_ms)
+
                     if response_data:
                         # Forward the response to the slave for processing
                         slave.process_incoming_data(response_data)
                         time.sleep(50 / 1000)  # Small delay to avoid flooding the bus
                     else:
-                        slave.check_if_is_still_online()
+                        # No response - treat as communication error
+                        slave.check_if_is_still_online(communication_error_occured=True)
                         self._logger.debug(
                             f"No response received from slave {slave.slave_id}"
                         )
@@ -92,7 +100,8 @@ class RscMaster:
                     self._logger.debug(f"No data to send to slave {slave.slave_id}")
 
             except Exception as e:
-                slave.is_online = False
+                # Exception during communication - treat as error
+                slave.check_if_is_still_online(communication_error_occured=True)
                 self._logger.error(f"Error in communication loop: {e}")
             finally:
                 # Move to the next slave

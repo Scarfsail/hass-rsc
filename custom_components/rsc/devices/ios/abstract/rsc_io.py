@@ -13,6 +13,7 @@ class RscIo(ABC):
         self._value = default_value
         self._is_online = False
         self._entities = []
+        self._first_time_value_set = False
 
     def _on_changed(self) -> None:
         """Notify all registered entities of a change."""
@@ -31,7 +32,8 @@ class RscIo(ABC):
     @value.setter
     def value(self, value) -> None:
         """Set the value and notify if it has changed."""
-        if self._value != value:
+        if self._value != value or not self._first_time_value_set:
+            self._first_time_value_set = True
             self._value = value
             self._on_changed()
 
