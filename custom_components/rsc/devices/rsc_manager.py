@@ -44,13 +44,24 @@ class RscManager:
                 self._logger.error("Invalid configuration: 'masters' section missing")
                 return False
 
+            shared_communication_config = config.get("communication_config", {})
+
             # Create masters from config
             for master_config in config["masters"]:
-                if "port" not in master_config or "title" not in master_config:
-                    self._logger.error(f"Invalid master config: {master_config}")
-                    continue
+                communication_config = {
+                    **shared_communication_config,
+                    **master_config.get("communication_config", {}),
+                }
 
-                port = master_config["port"]
+                if "port" not in communication_config:
+                    self._logger.error(
+                        f"Invalid communication_config config: {communication_config}"
+                    )
+                    continue
+                if "title" not in master_config:
+                    self._logger.error(f"Invalid master config: {master_config}")
+
+                port = communication_config["port"]
                 title = master_config["title"]
                 slaves_config = master_config.get("slaves", [])
 
@@ -88,7 +99,7 @@ class RscManager:
                     slaves.append(slave)  # Add to list instead of dictionary
 
                 # Create master with its slaves
-                master = RscMaster(port, title, slaves)
+                master = RscMaster(communication_config, title, slaves)
                 self._masters[port] = master
                 self._logger.info(
                     f"Created master: {title} on port {port} with {len(slaves)} slaves"

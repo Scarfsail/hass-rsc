@@ -11,21 +11,25 @@ from .rsc_slave import RscSlave
 
 
 class RscMaster:
-    def __init__(self, port: str, title: str, slaves: list[RscSlave]):
+    def __init__(self, comm_config: dict[str, Any], title: str, slaves: list[RscSlave]):
         """Initialize RscMaster with serial port configuration."""
-        self.port = port
+        self.port = comm_config.get("port")
+        self.response_timeout = comm_config.get("response_timeout", 1000)
+        self.communication_delay = comm_config.get("communication_delay", 50) / 1000
         self.title = title
         self.slaves = slaves
 
         self.serial: RscSerial = None
         self.communication_thread: threading.Thread = None
         self.running = False
-        self._logger = logging.getLogger(__name__ + " - " + port)
+        self._logger = logging.getLogger(__name__ + " - " + self.port)
 
     def begin_communication(self):
         """Open the serial port and start the communication thread."""
         try:
-            self.serial = RscSerial(port=self.port)
+            self.serial = RscSerial(
+                port=self.port, response_timeout_ms=self.response_timeout
+            )
 
             if self.serial.open():
                 self._logger.info(f"Successfully opened serial port {self.port}")
@@ -96,7 +100,9 @@ class RscMaster:
                     if response_data:
                         # Forward the response to the slave for processing
                         slave.process_incoming_data(response_data)
-                        time.sleep(50 / 1000)  # Small delay to avoid flooding the bus
+                        time.sleep(
+                            self.communication_delay
+                        )  # Small delay to avoid flooding the bus
                     else:
                         # No response - treat as communication error
                         slave.check_if_is_still_online(communication_error_occured=True)
