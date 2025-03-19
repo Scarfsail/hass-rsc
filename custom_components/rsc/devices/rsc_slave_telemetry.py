@@ -106,6 +106,18 @@ class RscSlaveTelemetry:
             self._comm_period_io,
         )
 
+        # Add slave enable / disable switch
+        self.show_all_ios_as_attribute = RscDo(
+            0, self._compose_entity_title("Zobrazit IOs jako atributy"), False
+        )
+        self.show_all_ios_as_attribute.is_online = True
+        self._register_entity(
+            RscEntityType.SWITCH,
+            "show_all_ios_as_attribute",
+            self.show_all_ios_as_attribute,
+            "switch",
+        )
+
     @property
     def slave_enabled(self):
         """Get the status of the slave enabled switch."""

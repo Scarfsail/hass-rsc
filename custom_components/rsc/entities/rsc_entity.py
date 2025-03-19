@@ -99,6 +99,21 @@ class RscEntity(ABC, Entity):
         else:
             self.rsc_value = raw_value
 
+    @property
+    def extra_state_attributes(self):
+        """Return the state attributes."""
+        attributes = {}
+
+        # Merge attributes from input if available
+        if self._rsc_input and self._rsc_input.attributes:
+            attributes.update(self._rsc_input.attributes)
+
+        # Merge attributes from output if available
+        if self._rsc_output and self._rsc_output.attributes:
+            attributes.update(self._rsc_output.attributes)
+
+        return attributes if attributes else None
+
     def io_changed(self):
         """Handle changes in IO states."""
 

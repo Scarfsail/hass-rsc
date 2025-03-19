@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Any
 
 from .rsc_io_type import RscIoType
 
@@ -12,6 +13,7 @@ class RscIo(ABC):
         self._is_online = False
         self._entities = []
         self._first_time_value_set = False
+        self._attributes: dict[str, Any] | None = None
 
     def _on_changed(self) -> None:
         """Notify all registered entities of a change."""
@@ -34,6 +36,19 @@ class RscIo(ABC):
             self._first_time_value_set = True
             self._value = value
             self._on_changed()
+
+    @property
+    def attributes(self):
+        """Get the attributes of the IO."""
+        return self._attributes
+
+    @attributes.setter
+    def attributes(self, attributes: dict[str, Any]) -> None:
+        """Set the attributes of the IO."""
+        if self._attributes == attributes:
+            return
+        self._attributes = attributes
+        self._on_changed()
 
     @property
     def is_online(self) -> bool:

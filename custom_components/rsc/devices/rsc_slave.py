@@ -2,6 +2,9 @@ import datetime
 import logging
 from typing import Any, Literal
 
+from numpy import add
+
+
 from ..entities.rsc_entities_manager import RscEntitiesManager
 from .rsc_slave_telemetry import RscSlaveTelemetry
 
@@ -241,7 +244,29 @@ class RscSlave:
             position_in_buff = result[1]
             processed_ios += 1
 
+        self._add_ios_to_telemetry_if_needed()
+
         return (True, position_in_buff)
+
+    def _add_ios_to_telemetry_if_needed(self):
+        if not self.telemetry.show_all_ios_as_attribute.value:
+            self.telemetry.show_all_ios_as_attribute.attributes = None
+            return
+
+        def add_ios_to_dict(
+            ios: list[RscInput | RscOutput], ios_dict: dict[str, dict[str, Any]]
+        ):
+            for io in ios:
+                ios_dict[f"{io.__class__.__name__}[{io.io_index}] - {io.title}"] = (
+                    f"{io.value}{(' '+io.unit) if hasattr(io, 'unit') else ''}, {'online' if io.is_online else 'offline'}"
+                )
+
+        ios_dict = {}
+        add_ios_to_dict(self.inputs, ios_dict)
+        add_ios_to_dict(self.outputs, ios_dict)
+
+        # Add to telemetry attributes
+        self.telemetry.show_all_ios_as_attribute.attributes = ios_dict
 
     def check_if_is_still_online(self, communication_error_occured: bool = False):
         """Check if the slave is still online based on timing.
@@ -253,6 +278,9 @@ class RscSlave:
             self.telemetry.add_communication_error()
         else:
             self.telemetry.update_communication_error_rate()
+
+        self._add_ios_to_telemetry_if_needed()
+
         if not self._is_online:
             return
 
