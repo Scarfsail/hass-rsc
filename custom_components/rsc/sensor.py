@@ -23,12 +23,16 @@ class RscSensor(SensorEntity, RscEntity):
     def __init__(self, *args):
         super().__init__(*args)
         # Set precision to 1 decimal place by default, or use config value if provided
+
         self._attr_native_precision = self._config.get("precision", 1)
 
     @property
     def state(self):
         """Return the state of the sensor."""
-        return self.rsc_value
+        if self.rsc_value is None or int(self.rsc_value) == self.rsc_value:
+            return self.rsc_value
+
+        return round(self.rsc_value, self._attr_native_precision)
 
     @property
     def unit_of_measurement(self):
