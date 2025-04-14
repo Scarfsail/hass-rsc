@@ -32,7 +32,15 @@ class RscSensor(SensorEntity, RscEntity):
         if self.rsc_value is None or isinstance(self.rsc_value, int):
             return self.rsc_value
 
-        return round(self.rsc_value, self._attr_native_precision)
+        value = self.rsc_value
+
+        if isinstance(self.rsc_value, str):
+            try:
+                value = float(self.rsc_value)
+            except ValueError:
+                return self.rsc_value
+
+        return round(value, self._attr_native_precision)
 
     @property
     def unit_of_measurement(self):
