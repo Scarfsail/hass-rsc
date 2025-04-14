@@ -30,15 +30,10 @@ class RscNumber(NumberEntity, RscEntity):
             self._attr_native_max_value = max_value
 
         self._attr_native_step = self._config.get("step", 1)
-        # Set precision to 1 decimal place by default, or use config value if provided
-        self._precision = self._config.get("precision", 1)
-        self._attr_native_precision = self._precision
 
     @property
     def value(self):
         """Return the current value."""
-        if self.rsc_value is not None:
-            return round(self.rsc_value, self._precision)
         return self.rsc_value
 
     def set_value(self, value):
