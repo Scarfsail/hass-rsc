@@ -28,12 +28,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     device_registry = dr.async_get(hass)
 
     rsc_manager = RscManager(
+        hass,
         Path(hass.config.path("rsc.yaml")),
         entities_manager,
         device_registry,
         entry.entry_id,
     )
-    if not rsc_manager.load_config():
+    if not await rsc_manager.load_config():
         _LOGGER.error("Failed to load configuration")
         return False
 

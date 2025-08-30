@@ -4,6 +4,7 @@ from pathlib import Path
 
 import yaml
 
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceRegistry
 
 from .. import const
@@ -17,12 +18,14 @@ class RscManager:
 
     def __init__(
         self,
+        hass: HomeAssistant,
         config_path: Path,
         entities_manager: RscEntitiesManager,
         device_registry: DeviceRegistry,
         config_entry_id: str,
     ):
         """Initialize the RSC manager with config file path."""
+        self.hass = hass
         self.config_path = config_path
         self._entities_manager = entities_manager
         self._device_registry = device_registry
@@ -30,15 +33,20 @@ class RscManager:
         self._masters: dict[str, RscMaster] = {}
         self._logger = logging.getLogger(__name__)
 
-    def load_config(self) -> bool:
+    async def load_config(self) -> bool:
         """Load configuration from YAML file."""
         try:
-            if not os.path.exists(self.config_path):
+            def _read_config_file():
+                if not os.path.exists(self.config_path):
+                    return None
+                with open(self.config_path, "r") as file:
+                    return yaml.safe_load(file)
+
+            config = await self.hass.async_add_executor_job(_read_config_file)
+            
+            if config is None:
                 self._logger.error(f"Config file not found: {self.config_path}")
                 return False
-
-            with open(self.config_path, "r") as file:
-                config = yaml.safe_load(file)
 
             if not config or "masters" not in config:
                 self._logger.error("Invalid configuration: 'masters' section missing")
