@@ -152,6 +152,9 @@ class RscSlaveTelemetry:
             "device_uid": self._device_uid,
             "entity_category": "diagnostic",
         }
+        if type == RscEntityType.SENSOR:
+            # Diagnostics only, keep state history but no long-term statistics
+            config["state_class"] = None
         if fast_mode_io is not None:
             config["fast_mode_io"] = fast_mode_io
         self._entities_manager.register_entity_config(config, io)

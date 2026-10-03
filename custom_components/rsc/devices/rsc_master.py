@@ -3,9 +3,7 @@ import threading
 import time
 import logging
 from typing import Dict, Optional, Any, List
-from urllib import response
 
-from numpy import byte
 from .rsc_serial import RscSerial
 from .rsc_slave import RscSlave
 
@@ -52,6 +50,8 @@ class RscMaster:
     def _communication_loop(self):
         """Thread function that manages communication with slaves."""
         current_slave_index = 0
+        # Whether the current round over all slaves exchanged data with any of them
+        exchanged_in_round = False
 
         while (
             self.running
@@ -59,12 +59,12 @@ class RscMaster:
             and self.serial.serial
             and self.serial.serial.is_open
         ):
-            try:
-                # No slaves to communicate with
-                if not self.slaves:
-                    time.sleep(1)
-                    continue
+            # No slaves to communicate with
+            if not self.slaves:
+                time.sleep(1)
+                continue
 
+            try:
                 # Get current slave to communicate with
                 slave = self.slaves[current_slave_index]
 
@@ -87,6 +87,7 @@ class RscMaster:
                 # Get data to send to the slave
                 data_to_send = slave.get_data_for_slave()
                 if data_to_send:
+                    exchanged_in_round = True
                     start_time = time.time()
                     response_data = self.send_data_and_receive_response(
                         slave.slave_id, data_to_send
@@ -119,8 +120,13 @@ class RscMaster:
             finally:
                 # Move to the next slave
                 current_slave_index = (current_slave_index + 1) % len(self.slaves)
+                if current_slave_index == 0:
+                    if not exchanged_in_round:
+                        # All slaves disabled or offline, avoid busy-spinning
+                        time.sleep(0.1)
+                    exchanged_in_round = False
 
-    def send_data_and_receive_response(self, slave_address: byte, data: bytes) -> bytes:
+    def send_data_and_receive_response(self, slave_address: int, data: bytes) -> bytes:
         """Send data to the slave and receive the response."""
         packet_to_send = self.create_packet_from_data(slave_address, data)
         self.serial.write(packet_to_send)

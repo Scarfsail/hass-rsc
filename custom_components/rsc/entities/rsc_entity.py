@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import asyncio
 import logging
 import threading
 from typing import Any
@@ -9,7 +10,6 @@ from jinja2.nativetypes import NativeEnvironment
 from homeassistant.const import EntityCategory
 from homeassistant.core import callback
 from homeassistant.helpers.entity import Entity
-from homeassistant.helpers.event import run_callback_threadsafe
 
 from .. import const
 from ..devices.ios.abstract.rsc_input import RscInput
@@ -19,6 +19,45 @@ _LOGGER = logging.getLogger(__name__)
 
 # Renders to native Python values (False, -87.6, ...), undefined variables raise
 _TEMPLATE_ENV = NativeEnvironment(undefined=StrictUndefined)
+
+# Coalesces IO changes from the worker threads into one event loop callback per burst
+_pending_lock = threading.Lock()
+_pending_entities: set["RscEntity"] = set()
+_flush_scheduled = False
+
+
+def _queue_io_changed(entity: "RscEntity", loop: asyncio.AbstractEventLoop) -> None:
+    """Queue the entity for a state write on the event loop, runs in a worker thread."""
+    global _flush_scheduled
+    with _pending_lock:
+        _pending_entities.add(entity)
+        if _flush_scheduled:
+            return
+        _flush_scheduled = True
+    try:
+        loop.call_soon_threadsafe(_flush_io_changed)
+    except RuntimeError:
+        # Event loop is closed (HA is stopping), don't leave the flush flag stuck
+        with _pending_lock:
+            _flush_scheduled = False
+
+
+@callback
+def _flush_io_changed() -> None:
+    """Publish the states of all queued entities, runs on the event loop."""
+    global _pending_entities, _flush_scheduled
+    with _pending_lock:
+        entities = _pending_entities
+        _pending_entities = set()
+        _flush_scheduled = False
+    for entity in entities:
+        if entity.hass is None:
+            continue
+        try:
+            entity._async_handle_io_changed()
+        except Exception:
+            # One failing entity must not drop the state writes of the others
+            _LOGGER.exception(f"Error writing state of entity: {entity.entity_id}")
 
 
 class RscEntity(ABC, Entity):
@@ -137,14 +176,15 @@ class RscEntity(ABC, Entity):
 
         self._update_rsc_value()
 
-        if self.hass is None:
+        hass = self.hass
+        if hass is None:
             # Not added to HA yet (or disabled), the initial write picks up the value
             return
 
         if threading.current_thread() is threading.main_thread():
             self._async_handle_io_changed()
         else:
-            run_callback_threadsafe(self.hass.loop, self._async_handle_io_changed)
+            _queue_io_changed(self, hass.loop)
 
     @callback
     def _async_handle_io_changed(self):
