@@ -3,7 +3,8 @@ import logging
 import threading
 from typing import Any
 
-from jinja2 import Environment
+from jinja2 import StrictUndefined, Template, Undefined
+from jinja2.nativetypes import NativeEnvironment
 
 from homeassistant.const import EntityCategory
 from homeassistant.core import callback
@@ -15,6 +16,9 @@ from ..devices.ios.abstract.rsc_input import RscInput
 from ..devices.ios.abstract.rsc_output import RscOutput
 
 _LOGGER = logging.getLogger(__name__)
+
+# Renders to native Python values (False, -87.6, ...), undefined variables raise
+_TEMPLATE_ENV = NativeEnvironment(undefined=StrictUndefined)
 
 
 class RscEntity(ABC, Entity):
@@ -46,7 +50,15 @@ class RscEntity(ABC, Entity):
             raise ValueError("ID is required in the configuration")
 
         self._name: str = config.get("title", self._id)
-        self._template: str | None = config.get("template")
+        self._template: Template | None = None
+        template = config.get("template")
+        if template:
+            try:
+                self._template = _TEMPLATE_ENV.from_string(template)
+            except Exception as e:
+                _LOGGER.error(
+                    f"Invalid template for entity: {self._name}, raw value is used. Error: {template}: {e}"
+                )
         self._unit: str | None = config.get("unit")
 
         device_class = config.get("device_class", self._default_device_class())
@@ -92,12 +104,14 @@ class RscEntity(ABC, Entity):
         raw_value = self._rsc_input.value if self._rsc_input else self._rsc_output.value
         if self._template:
             try:
-                env = Environment()
-                template = env.from_string(self._template)
-                self.rsc_value = template.render(value=raw_value)
+                rendered = self._template.render(value=raw_value)
+                if isinstance(rendered, Undefined):
+                    # A lone {{ undefined_var }} is returned as is, not raised
+                    raise ValueError("template rendered an undefined value")
+                self.rsc_value = rendered
             except Exception as e:
                 _LOGGER.error(
-                    f"Error rendering template for entity: {self._name}. Error: {self._template}: {e}"
+                    f"Error rendering template for entity: {self._name}. Error: {self._config['template']}: {e}"
                 )
                 self.rsc_value = raw_value
         else:
