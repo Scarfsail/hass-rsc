@@ -1,5 +1,6 @@
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import MATCH_ALL
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -20,6 +21,9 @@ async def async_setup_entry(
 
 
 class RscSwitch(SwitchEntity, RscEntity):
+    # IO attributes ("Zobrazit IOs jako atributy") are for live view only
+    _unrecorded_attributes = frozenset({MATCH_ALL})
+
     def _default_device_class(self):
         """Return the device class of the switch."""
         return SwitchDeviceClass.OUTLET

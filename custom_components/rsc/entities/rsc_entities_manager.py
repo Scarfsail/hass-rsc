@@ -64,6 +64,7 @@ class RscEntitiesManager:
 
     def create_entities(self, defaults: dict[str, Any]):
         """Create entities based on the registered configurations."""
+        entities_by_definition: dict[RscEntityDefinition, list[RscEntity]] = {}
         for entity_config in self.entity_configs.values():
             config = {**defaults, **entity_config.config}
             rsc_input = entity_config.rsc_input
@@ -77,8 +78,8 @@ class RscEntitiesManager:
 
             definition = self.entity_definitions[entity_type]
             entity = definition.create_entity(config, rsc_input, rsc_output)
-            definition.async_add_entities([entity])
             if entity:
+                entities_by_definition.setdefault(definition, []).append(entity)
                 entity_config.entities.append(entity)
 
                 if rsc_input:
@@ -88,3 +89,6 @@ class RscEntitiesManager:
                     rsc_output.register_entity(entity)
 
                 _LOGGER.debug(f"Created entity: {entity}")
+
+        for definition, entities in entities_by_definition.items():
+            definition.async_add_entities(entities)

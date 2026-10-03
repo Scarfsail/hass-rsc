@@ -2,9 +2,6 @@ import datetime
 import logging
 from typing import Any, Literal
 
-from numpy import add
-
-
 from ..entities.rsc_entities_manager import RscEntitiesManager
 from .rsc_slave_telemetry import RscSlaveTelemetry
 

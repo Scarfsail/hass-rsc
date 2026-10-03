@@ -87,6 +87,17 @@ class RscSensor(SensorEntity, RscEntity):
             self._cancel_flush()
             self._cancel_flush = None
 
+    async def async_added_to_hass(self):
+        """Clear long-term statistics of sensors without a state class."""
+        await super().async_added_to_hass()
+        if (
+            self._config.get("state_class", SensorStateClass.MEASUREMENT) is None
+            and "recorder" in self.hass.config.components
+        ):
+            from homeassistant.components.recorder import get_instance
+
+            get_instance(self.hass).async_clear_statistics([self.entity_id])
+
     async def async_will_remove_from_hass(self):
         """Cancel a pending trailing flush."""
         self._async_cancel_flush()
@@ -116,4 +127,4 @@ class RscSensor(SensorEntity, RscEntity):
     @property
     def state_class(self):
         """Return the state class of the sensor."""
-        return SensorStateClass.MEASUREMENT
+        return self._config.get("state_class", SensorStateClass.MEASUREMENT)
