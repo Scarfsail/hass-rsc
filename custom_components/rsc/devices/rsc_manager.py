@@ -113,7 +113,13 @@ class RscManager:
                     f"Created master: {title} on port {port} with {len(slaves)} slaves"
                 )
 
-            self._entities_manager.create_entities()
+            self._entities_manager.create_entities(
+                defaults={
+                    "min_interval": config.get(
+                        "min_interval", const.SENSOR_MIN_INTERVAL
+                    )
+                }
+            )
             return True
 
         except Exception as e:
