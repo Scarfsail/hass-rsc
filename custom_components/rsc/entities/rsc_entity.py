@@ -3,7 +3,7 @@ import logging
 import threading
 from typing import Any
 
-from jinja2 import Environment
+from jinja2.nativetypes import NativeEnvironment
 
 from homeassistant.const import EntityCategory
 from homeassistant.core import callback
@@ -92,7 +92,7 @@ class RscEntity(ABC, Entity):
         raw_value = self._rsc_input.value if self._rsc_input else self._rsc_output.value
         if self._template:
             try:
-                env = Environment()
+                env = NativeEnvironment()
                 template = env.from_string(self._template)
                 self.rsc_value = template.render(value=raw_value)
             except Exception as e:
