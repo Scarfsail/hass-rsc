@@ -1,7 +1,7 @@
 {
   "domain": "rsc",
   "name": "Remote Slaves Communication (RSC)",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "codeowners": [
     "@scarfsail"
   ],
