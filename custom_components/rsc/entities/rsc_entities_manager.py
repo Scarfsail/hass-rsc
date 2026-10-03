@@ -62,10 +62,10 @@ class RscEntitiesManager:
                 cfg.rsc_output = rsc_output
             _LOGGER.debug(f"Updated entity config: {config['id']}")
 
-    def create_entities(self):
+    def create_entities(self, defaults: dict[str, Any]):
         """Create entities based on the registered configurations."""
         for entity_config in self.entity_configs.values():
-            config = entity_config.config
+            config = {**defaults, **entity_config.config}
             rsc_input = entity_config.rsc_input
             rsc_output = entity_config.rsc_output
 

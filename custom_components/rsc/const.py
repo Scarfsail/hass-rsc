@@ -6,3 +6,5 @@ INTEGRATION_FOLDER = DOMAIN
 
 ENTITIES_MANAGER = "entities_manager"
 RSC_MANAGER = "rsc_manager"
+
+SENSOR_MIN_INTERVAL = 30  # seconds

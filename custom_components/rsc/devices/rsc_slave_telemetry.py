@@ -54,6 +54,15 @@ class RscSlaveTelemetry:
         self._create_entities()
 
     def _create_entities(self):
+        # Created first so the telemetry sensors below can reference it
+        self.fast_telemetry_io = RscDo(
+            0, self._compose_entity_title("Rychlá diagnostika"), False
+        )
+        self.fast_telemetry_io.is_online = True
+        self._register_entity(
+            RscEntityType.SWITCH, "fast_telemetry", self.fast_telemetry_io, "switch"
+        )
+
         # Add average response time sensor
         self._average_response_time_io = RscAii(
             0, self._compose_entity_title("Průměrná doba odpovědi"), "ms"
@@ -63,6 +72,7 @@ class RscSlaveTelemetry:
             RscEntityType.SENSOR,
             "response_time",
             self._average_response_time_io,
+            fast_mode_io=self.fast_telemetry_io,
         )
 
         # Add online status binary sensor
@@ -84,6 +94,7 @@ class RscSlaveTelemetry:
             RscEntityType.SENSOR,
             "comm_errors_per_minute",
             self._comm_errors_per_minute_io,
+            fast_mode_io=self.fast_telemetry_io,
         )
 
         # Add slave enable / disable switch
@@ -104,6 +115,7 @@ class RscSlaveTelemetry:
             RscEntityType.SENSOR,
             "comm_period",
             self._comm_period_io,
+            fast_mode_io=self.fast_telemetry_io,
         )
 
         # Add slave enable / disable switch
@@ -129,19 +141,20 @@ class RscSlaveTelemetry:
         entity_id: str,
         io: RscIo,
         device_class: str | None = None,
+        fast_mode_io: RscIo | None = None,
     ) -> None:
-        self._entities_manager.register_entity_config(
-            {
-                "id": self._compose_entity_id(entity_id),
-                "type": type.value,
-                "title": io.title,
-                "device_class": device_class,
-                "unit": io.unit if hasattr(io, "unit") else None,
-                "device_uid": self._device_uid,
-                "entity_category": "diagnostic",
-            },
-            io,
-        )
+        config = {
+            "id": self._compose_entity_id(entity_id),
+            "type": type.value,
+            "title": io.title,
+            "device_class": device_class,
+            "unit": io.unit if hasattr(io, "unit") else None,
+            "device_uid": self._device_uid,
+            "entity_category": "diagnostic",
+        }
+        if fast_mode_io is not None:
+            config["fast_mode_io"] = fast_mode_io
+        self._entities_manager.register_entity_config(config, io)
 
     def _compose_entity_id(self, entity_id: str) -> str:
         return f"rsc_device_{self._telemetry_entities_id}_{entity_id}"

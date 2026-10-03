@@ -6,6 +6,7 @@ from typing import Any
 from jinja2 import Environment
 
 from homeassistant.const import EntityCategory
+from homeassistant.core import callback
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.event import run_callback_threadsafe
 
@@ -119,10 +120,19 @@ class RscEntity(ABC, Entity):
 
         self._update_rsc_value()
 
+        if self.hass is None:
+            # Not added to HA yet (or disabled), the initial write picks up the value
+            return
+
         if threading.current_thread() is threading.main_thread():
-            self.async_write_ha_state()
+            self._async_handle_io_changed()
         else:
-            run_callback_threadsafe(self.hass.loop, self.async_write_ha_state)
+            run_callback_threadsafe(self.hass.loop, self._async_handle_io_changed)
+
+    @callback
+    def _async_handle_io_changed(self):
+        """Publish the new state, runs on the event loop."""
+        self.async_write_ha_state()
 
     def set_io(self, value):
         """Set the value of the IO."""
