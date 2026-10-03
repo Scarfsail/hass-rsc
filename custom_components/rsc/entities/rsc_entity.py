@@ -18,6 +18,9 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class RscEntity(ABC, Entity):
+    # State is pushed from io_changed(), HA polling would bypass sensor throttling
+    _attr_should_poll = False
+
     def __init__(
         self,
         config: dict[str, Any],
