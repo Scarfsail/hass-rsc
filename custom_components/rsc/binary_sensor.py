@@ -2,6 +2,7 @@ from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.template import result_as_boolean
 
 from . import const
 from .entities import RscEntitiesManager, RscEntity, RscEntityDefinition, RscEntityType
@@ -23,10 +24,9 @@ async def async_setup_entry(
 
 class RscBinarySensor(BinarySensorEntity, RscEntity):
     @property
-    def is_on(self):
-        """Return the state of the sensor."""
+    def is_on(self) -> bool | None:
+        """Return the state, text from a template is parsed by HA's result_as_boolean."""
         value = self.rsc_value
-        if isinstance(value, str):
-            # Text from a template, parsed like HA's result_as_boolean
-            value = value.strip().lower() not in ("", "false", "off", "0", "no")
-        return bool(value)
+        if value is None:
+            return None
+        return result_as_boolean(value)
