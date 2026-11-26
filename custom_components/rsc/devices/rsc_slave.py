@@ -186,9 +186,6 @@ class RscSlave:
             if (
                 received_packet_id != 0
             ):  # When received_packet_id == 0, the slave device sent data asynchronously
-                if not self.outputs:
-                    raise Exception("outputs can't be None when processing inputs.")
-
                 self.packet_id = received_packet_id
                 # Increment packet ID for next request, ensuring it's never 0
                 self.packet_id += 1
@@ -210,7 +207,9 @@ class RscSlave:
             )
             self.check_if_is_still_online(communication_error_occured=True)
 
-    def _process_incoming_inputs(self, data: bytes, position_in_buff: int) -> bool:
+    def _process_incoming_inputs(
+        self, data: bytes, position_in_buff: int
+    ) -> tuple[bool, int]:
         """Process incoming inputs data.
 
         Args:
@@ -218,7 +217,7 @@ class RscSlave:
             position_in_buff: Current position in buffer
 
         Returns:
-            True if processing was successful, False otherwise
+            tuple: (success, new position)
         """
         #  ********* DATA Structure    ***********
         #    1B         |   X  |
@@ -238,11 +237,11 @@ class RscSlave:
                 self._logger.error(
                     f"Received IO INPUT index: {io_idx} which is higher than amount of Inputs in this system: {len(self.inputs)}"
                 )
-                return False
+                return False, position_in_buff
 
             result = self.inputs[io_idx].process_incoming_data(data, position_in_buff)
             if not result[0]:
-                return False
+                return False, position_in_buff
 
             position_in_buff = result[1]
             processed_ios += 1
