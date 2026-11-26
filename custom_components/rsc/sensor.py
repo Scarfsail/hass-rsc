@@ -1,3 +1,5 @@
+import logging
+import math
 import time
 
 from homeassistant.components.sensor import SensorEntity, SensorStateClass
@@ -8,6 +10,8 @@ from homeassistant.helpers.event import async_call_later
 
 from . import const
 from .entities import RscEntitiesManager, RscEntity, RscEntityDefinition, RscEntityType
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
@@ -27,7 +31,8 @@ class RscSensor(SensorEntity, RscEntity):
         super().__init__(*args)
         # Set precision to 1 decimal place by default, or use config value if provided
 
-        self._attr_native_precision = self._config.get("precision", 1)
+        self._precision = self._config.get("precision", 1)
+        self._warned_non_numeric = False
 
         # Throttling of state writes, touched only on the event loop
         self._threshold = self._config.get("threshold")
@@ -46,7 +51,7 @@ class RscSensor(SensorEntity, RscEntity):
     @callback
     def _async_handle_io_changed(self):
         """Publish the new state at most once per min_interval."""
-        state = self.state
+        state = self.native_value
         now = time.monotonic()
 
         if (
@@ -77,7 +82,7 @@ class RscSensor(SensorEntity, RscEntity):
     def _async_write_and_record(self):
         self.async_write_ha_state()
         self._last_write = time.monotonic()
-        self._last_state = self.state
+        self._last_state = self.native_value
         self._last_available = self.available
         self._async_cancel_flush()
 
@@ -104,23 +109,34 @@ class RscSensor(SensorEntity, RscEntity):
         await super().async_will_remove_from_hass()
 
     @property
-    def state(self):
-        """Return the state of the sensor."""
-        if self.rsc_value is None or isinstance(self.rsc_value, int):
-            return self.rsc_value
-
+    def native_value(self):
+        """Return the value of the sensor, rounded to the configured precision."""
         value = self.rsc_value
+        if value is None or isinstance(value, int):
+            return value
 
-        if isinstance(self.rsc_value, str):
+        if isinstance(value, str):
             try:
-                value = float(self.rsc_value)
+                value = float(value)
             except ValueError:
-                return self.rsc_value
+                return self._non_numeric_to_none(value)
 
-        return round(value, self._attr_native_precision)
+        if isinstance(value, float) and not math.isfinite(value):
+            return self._non_numeric_to_none(value)
+
+        return round(value, self._precision)
+
+    def _non_numeric_to_none(self, value):
+        """Warn once per entity about a non-numeric/non-finite value and report unknown."""
+        if not self._warned_non_numeric:
+            self._warned_non_numeric = True
+            _LOGGER.warning(
+                f"Sensor {self.entity_id} received non-numeric/non-finite value: {value!r}, reporting unknown"
+            )
+        return None
 
     @property
-    def unit_of_measurement(self):
+    def native_unit_of_measurement(self):
         """Return the unit of measurement."""
         return self._unit
 

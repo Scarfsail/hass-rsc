@@ -32,10 +32,10 @@ class RscNumber(NumberEntity, RscEntity):
         self._attr_native_step = self._config.get("step", 1)
 
     @property
-    def value(self):
+    def native_value(self):
         """Return the current value."""
         return self.rsc_value
 
-    def set_value(self, value):
+    def set_native_value(self, value):
         """Set the entity's value."""
         self.set_io(value)

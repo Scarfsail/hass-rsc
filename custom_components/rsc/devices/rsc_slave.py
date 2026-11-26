@@ -19,6 +19,10 @@ class RscSlave:
     RSC_DATA_TYPE_INPUTS = 1
     RSC_DATA_TYPE_OUTPUTS = 2
 
+    # Gap between communication attempts with an offline slave, doubled after each failed attempt
+    RETRY_GAP_MIN_S = 5
+    RETRY_GAP_MAX_S = 60
+
     def __init__(
         self,
         slave_id: int,
@@ -43,6 +47,7 @@ class RscSlave:
         self.last_sent_data: datetime = None
         self._is_online = False
         self.last_online: datetime = None
+        self.retry_gap_s = self.RETRY_GAP_MIN_S
 
         # Initialize telemetry
         self.telemetry = RscSlaveTelemetry(
@@ -124,6 +129,7 @@ class RscSlave:
         self._is_online = is_online
         self.telemetry.is_online_io.value = is_online
         if is_online:
+            self.retry_gap_s = self.RETRY_GAP_MIN_S
             for output in self.outputs:
                 output.is_online = True
             self._logger.info(f"Slave {self.slave_id} is online")
@@ -279,6 +285,8 @@ class RscSlave:
         self._add_ios_to_telemetry_if_needed()
 
         if not self._is_online:
+            if communication_error_occured:
+                self.retry_gap_s = min(self.retry_gap_s * 2, self.RETRY_GAP_MAX_S)
             return
 
         # Check if valid data wasn't received within last 4 seconds

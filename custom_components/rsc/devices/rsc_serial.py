@@ -122,39 +122,26 @@ class RscSerial:
             if not self.serial:
                 return b""
 
-            input_buffer = bytearray()
-            packet_size = 255
-
-            # Wait for response
-            start_time = time.time()
-
-            while len(input_buffer) < packet_size:
-                waiting_bytes = self.serial.in_waiting
-                received_buffer = self.serial.read(
-                    waiting_bytes if waiting_bytes > 0 else 1
+            # The first byte is the packet size, wait for it up to the port timeout
+            first = self.serial.read(1)
+            if not first:
+                _LOGGER.info(
+                    f"Response for slave: {slave_address} wasn't received in given time: {self.response_timeout_ms} ms."
                 )
+                return b""
 
-                if len(received_buffer) > 0 and packet_size == 255:
-                    packet_size = received_buffer[0]
+            packet_size = first[0]
+            if packet_size < 2:
+                return first
 
-                input_buffer.extend(received_buffer)
-
-                if len(input_buffer) < packet_size:
-                    # Check if we've exceeded timeout
-                    elapsed = (time.time() - start_time) * 1000
-                    if elapsed > self.response_timeout_ms:
-                        if len(input_buffer) == 0:
-                            _LOGGER.info(
-                                f"Response for slave: {slave_address} wasn't received in given time: {self.response_timeout_ms} ms."
-                            )
-                        else:
-                            _LOGGER.info(
-                                f"Response wasn't fully received for slave: {slave_address}. Received bytes: {len(input_buffer)}, expected packet size: {packet_size}"
-                            )
-                        return b""
-                    time.sleep(10 / 1000)
-                    continue
-            return bytes(input_buffer)
+            # Returns as soon as the rest of the packet has arrived
+            rest = self.serial.read(packet_size - 1)
+            if len(rest) < packet_size - 1:
+                _LOGGER.info(
+                    f"Response wasn't fully received for slave: {slave_address}. Received bytes: {1 + len(rest)}, expected packet size: {packet_size}"
+                )
+                return b""
+            return first + rest
 
         except Exception as ex:
             _LOGGER.error(f"Error reading data: {str(ex)}")

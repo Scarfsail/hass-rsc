@@ -68,7 +68,7 @@ class RscMaster:
                 # Get current slave to communicate with
                 slave = self.slaves[current_slave_index]
 
-                # Skip communication if last attempt was less than 5 seconds ago
+                # Skip disabled slaves
                 if not slave.telemetry.slave_enabled:
                     self._logger.debug(
                         f"Slave {slave.slave_id} is disabled, skipping communication"
@@ -76,11 +76,15 @@ class RscMaster:
                     slave.check_if_is_still_online(communication_error_occured=False)
                     continue
 
+                # Skip communication if last attempt was less than the retry gap ago
                 if (
                     not slave.is_online
                     and slave.last_sent_data is not None
                     and slave.last_sent_data
-                    > (datetime.datetime.now() - datetime.timedelta(seconds=5))
+                    > (
+                        datetime.datetime.now()
+                        - datetime.timedelta(seconds=slave.retry_gap_s)
+                    )
                 ):
                     continue
 
