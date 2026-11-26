@@ -23,10 +23,10 @@ async def async_setup_entry(
 
 class RscBinarySensor(BinarySensorEntity, RscEntity):
     @property
-    def state(self):
+    def is_on(self):
         """Return the state of the sensor."""
         value = self.rsc_value
         if isinstance(value, str):
             # Text from a template, parsed like HA's result_as_boolean
             value = value.strip().lower() not in ("", "false", "off", "0", "no")
-        return "on" if value else "off"
+        return bool(value)
