@@ -314,7 +314,7 @@ class RscSlave:
             self._logger.warning(f"No {io_type} defined in configuration")
             return ios
 
-        for io_config in ios_config[io_type]:
+        for io_config in ios_config[io_type] or []:
             if io_type == "inputs":
                 io_obj = create_rsc_input(io_config)
             else:  # outputs

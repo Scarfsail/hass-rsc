@@ -48,17 +48,19 @@ class RscManager:
                 self._logger.error(f"Config file not found: {self.config_path}")
                 return False
 
-            if not config or "masters" not in config:
-                self._logger.error("Invalid configuration: 'masters' section missing")
+            if not config or not config.get("masters"):
+                self._logger.error(
+                    "Invalid configuration: 'masters' section missing or empty"
+                )
                 return False
 
-            shared_communication_config = config.get("communication_config", {})
+            shared_communication_config = config.get("communication_config") or {}
 
             # Create masters from config
             for master_config in config["masters"]:
                 communication_config = {
                     **shared_communication_config,
-                    **master_config.get("communication_config", {}),
+                    **(master_config.get("communication_config") or {}),
                 }
 
                 if "port" not in communication_config:
@@ -71,7 +73,7 @@ class RscManager:
 
                 port = communication_config["port"]
                 title = master_config["title"]
-                slaves_config = master_config.get("slaves", [])
+                slaves_config = master_config.get("slaves") or []
 
                 # Process slaves for this master
                 slaves = []  # Changed from dictionary to list
@@ -85,7 +87,7 @@ class RscManager:
                         "telemetry_entities_id", str(slave_id)
                     )
                     slave_title = slave_config["title"]
-                    ios_config = slave_config.get("ios", {})
+                    ios_config = slave_config.get("ios") or {}
 
                     # Create slave instance
                     device_uid = port + "_" + str(slave_id)
